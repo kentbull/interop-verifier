@@ -2,6 +2,7 @@
 
 import json
 import os
+from importlib import resources
 
 import falcon
 from hio.base import doing
@@ -15,7 +16,11 @@ from keri.end import ending
 from keri.peer import exchanging
 from keri.vc import protocoling
 from keri.vdr import verifying
-from keri.vdr.eventing import Reger, Tevery
+from keri.vdr.eventing import Tevery
+try:
+    from keri.vdr.eventing import Reger
+except ImportError:
+    from keri.vdr.viring import Reger
 
 from interop_verifier.core import basing, handling, httping, monitoring
 from interop_verifier.core.credentials import TeveryCuery
@@ -27,8 +32,6 @@ def incept_if_new(hby: Habery, alias: str, incept_args: dict):
     hab = hby.habByName(name=alias)
     if hab is not None:
         return hab
-    if not incept_args.get("incept_file"):
-        raise ValueError("--incept-file is required when the verifier alias does not already exist")
     return hby.makeHab(name=alias, **inception_config(**incept_args))
 
 
@@ -246,9 +249,13 @@ def verifier_stats(parser, ingress, hby, reger, notifier):
 
 
 def inception_config(name=None, base=None, alias=None, bran=None, incept_file=None, config_dir=None):
-    path = incept_file if config_dir is None else os.path.join(config_dir, incept_file)
-    with open(path, "r", encoding="utf-8") as fp:
-        config = json.load(fp)
+    if incept_file is None:
+        raw = resources.files("interop_verifier.data").joinpath("interop-verifier-incept-no-wits.json").read_text()
+        config = json.loads(raw)
+    else:
+        path = incept_file if config_dir is None else os.path.join(config_dir, incept_file)
+        with open(path, "r", encoding="utf-8") as fp:
+            config = json.load(fp)
     return {
         "transferable": config.get("transferable", True),
         "wits": config.get("wits", []),

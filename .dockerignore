@@ -1,0 +1,10 @@
+.git
+.github
+.idea
+.pytest_cache
+__pycache__
+*.py[cod]
+build
+dist
+*.egg-info
+.venv

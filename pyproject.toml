@@ -1,9 +1,21 @@
 [project]
 name = "interop-verifier"
-version = "0.1.0"
+version = "1.0.0"
 description = "Generalized Sally-style KERIpy verifier for ACDC interop tests"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12.6"
+authors = [
+    { name = "Kent Bull", email = "kent@kentbull.com" },
+]
+keywords = ["keri", "acdc", "cesr", "ipex", "verifier"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security :: Cryptography",
+]
 dependencies = [
     "keri>=1.2.12,<1.3.0",
     "hio>=0.6.14,<0.7.0",
@@ -13,6 +25,11 @@ dependencies = [
 
 [project.scripts]
 interop-verifier = "interop_verifier.app.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/kentbull/interop-verifier"
+Repository = "https://github.com/kentbull/interop-verifier"
+Issues = "https://github.com/kentbull/interop-verifier/issues"
 
 [build-system]
 requires = ["hatchling"]
@@ -24,4 +41,5 @@ packages = ["src/interop_verifier"]
 [dependency-groups]
 dev = [
     "pytest>=8.3.5",
+    "twine>=6.2.0",
 ]
