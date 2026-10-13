@@ -126,7 +126,7 @@ class Communicator(doing.DoDoer):
                     if action == "iss"
                     else revocation_payload(self.reger, creder, self.policy)
                 )
-                self.request(creder.said, creder.schema, action, creder.issuer, data)
+                self.request(creder.said, creder.schema, action, creder.sad["i"], data)
                 continue
 
             client, clientDoer = self.clients[said]

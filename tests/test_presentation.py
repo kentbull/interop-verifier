@@ -1,5 +1,6 @@
-"""A real signed grant reaches credential admission and the delivery queue."""
+"""Verify grant ingestion, signed webhook requests, and revocation payloads."""
 
+import json
 from contextlib import ExitStack
 
 from falcon import testing
@@ -10,11 +11,11 @@ from keri.vc import proving, protocoling
 from keri.vdr import credentialing
 
 from interop_verifier.core import serving
-from interop_verifier.core.policy import VerificationPolicy, revocation_payload
+from interop_verifier.core.policy import VerificationPolicy, credential_payload, revocation_payload
 
 
 def test_v1_grant_ingestion_and_health(tmp_path):
-    """The service parses embedded v1 proof with actual KEL, TEL, and schema state."""
+    """Real v1 evidence reaches admission, serialized HTTP requests, and revocation cues."""
     version = kering.Vrsn_1_0
     modern = kering.Version.major >= 2
     protocol = {"version": version} if modern else {}
@@ -25,9 +26,9 @@ def test_v1_grant_ingestion_and_health(tmp_path):
         rgy = credentialing.Regery(hby=issuer, name="issuer", temp=True)
         stack.callback(rgy.reger.close, clear=True)
         doers = serving.setup(verifier, vhab, alias="verifier", httpPort=0,
-                              hook="http://127.0.0.1:1/", policy=VerificationPolicy(),
+                              hook="http://127.0.0.1:1/", policy=VerificationPolicy({"issuers": [ihab.pre]}),
                               headDirPath=str(tmp_path))
-        server, comms, _, handler, agent = doers
+        server, comms, tel_cues, handler, agent = doers
         stack.callback(server.server.close)
         stack.callback(comms.cdb.close, clear=True)
         stack.callback(comms.reger.close, clear=True)
@@ -83,6 +84,32 @@ def test_v1_grant_ingestion_and_health(tmp_path):
         assert health.json["counts"]["recv"] == 1
         assert health.json["stats"]["savedCredentials"] == 1
 
+        # Give the real HTTP doer its scheduler clock before it opens its request queue.
+        comms.wind(tymth=lambda: 0.0)
+        stack.callback(comms.exit)
+        comms.processReceived(db=comms.cdb.recv, action="iss")
+        outgoing, _ = comms.clients[creder.said]
+        stack.callback(outgoing.close)
+        request, = outgoing.requests
+        payload = json.loads(request["body"])
+        assert request["method"] == "POST"
+        assert request["headers"]["Sally-Resource"] == schema.said
+        assert request["headers"]["Signature-Input"]
+        assert request["headers"]["Signature"]
+        assert payload["action"] == "iss"
+        assert payload["actor"] == ihab.pre
+        assert payload["data"]["issuer"] == ihab.pre
+        assert payload["data"]["schema"] == schema.said
+        assert payload["data"]["recipient"] == vhab.pre
+        # A stored source is a real Serder too; its chain summary must stay JSON-native.
+        chained = proving.credential(issuer=ihab.pre, recipient=vhab.pre, schema=schema.said,
+                                     status=registry.regk, data={},
+                                     source={"source": {"n": creder.said, "s": schema.said, "o": "I2I"}},
+                                     **protocol)
+        summary = json.loads(json.dumps(credential_payload(comms.reger, chained, comms.policy)))
+        assert summary["chain"][0]["issuer"] == ihab.pre
+        assert summary["chain"][0]["schema"] == schema.said
+
         # Admit a real revocation and read its TEL timestamp for the callback payload.
         revocation = registry.revoke(said=creder.said)
         ihab.interact(data=[eventing.SealEvent(revocation.pre, revocation.snh, revocation.said)._asdict()],
@@ -96,4 +123,14 @@ def test_v1_grant_ingestion_and_health(tmp_path):
         agent.parser.parse(ims=replay)
         state = comms.reger.tevers[registry.regk].vcState(creder.said)
         assert state.et == kering.Ilks.rev
-        assert revocation_payload(comms.reger, creder, comms.policy)["revocationTimestamp"] == state.dt
+        task = tel_cues.do(tymth=lambda: 0.0)
+        next(task)
+        while tel_cues.cues:
+            next(task)
+        task.close()
+        assert comms.cdb.snd.get(keys=(creder.said,)).qb64 == ihab.pre
+        comms.processRevocations()
+        assert [saved.said for _, saved in comms.cdb.items(comms.cdb.revk)] == [creder.said]
+        payload = json.loads(json.dumps(revocation_payload(comms.reger, creder, comms.policy)))
+        assert payload["issuer"] == ihab.pre
+        assert payload["revocationTimestamp"] == state.dt
