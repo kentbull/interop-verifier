@@ -49,7 +49,7 @@ def credential_payload(reger, creder, policy):
 
 
 def revocation_payload(reger, creder, policy):
-    state = reger.tevers[creder.regi].vcState(creder.said)
+    state = reger.tevers[creder.sad["ri"]].vcState(creder.said)
     return {
         "type": policy.schema_name(creder.schema),
         "schema": creder.schema,

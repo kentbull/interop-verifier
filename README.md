@@ -25,6 +25,15 @@ interop-verifier start \
 The verifier uses a bundled no-witness inception config by default. Pass
 `--incept-file` to use a custom KERIpy-style inception JSON file.
 
+Pass `--protocol-version 1.0` or `--protocol-version 2.0` to select the KERI
+protocol and CESR genus for inception, ingress, and signed OOBI replies. The
+selection also applies when reopening existing state. Omitting it follows the
+installed KERIpy default; ingress no longer unconditionally assumes v1. Use
+`--protocol-version 1.0` for the current v1 IPEX presentation workflow. Released
+KERIpy 1.2.x retains its native v1 behavior and rejects an explicit v2 request.
+The v2 selector covers current-main ingress and OOBIs; it does not add v2 IPEX
+credential presentation support to KERIpy.
+
 ## Run with Docker
 
 ```sh

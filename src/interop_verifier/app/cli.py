@@ -3,6 +3,7 @@
 import argparse
 import json
 
+from keri import kering
 from keri.app import configing, habbing, keeping
 
 import interop_verifier
@@ -21,6 +22,8 @@ def main():
     start.add_argument("-a", "--alias", required=True)
     start.add_argument("-s", "--salt")
     start.add_argument("--passcode", dest="bran", default=None)
+    start.add_argument("--protocol-version", choices=("1.0", "2.0"), default=None,
+                       help="KERI protocol and CESR genus version (default: installed KERIpy version)")
     start.add_argument("-i", "--incept-file", dest="inceptFile", default=None)
     start.add_argument("-c", "--config-dir", dest="configDir", default=None)
     start.add_argument("-f", "--config-file", dest="configFile", default=None)
@@ -48,6 +51,8 @@ def start_command(args):
         config_dir=args.configDir,
         salt=args.salt,
         head_dir_path=args.headDirPath,
+        version=kering.Versionage(*(int(part) for part in args.protocol_version.split(".")))
+        if args.protocol_version else None,
     )
     incept_args = {
         "name": args.name,
@@ -76,7 +81,12 @@ def start_command(args):
     serving.run_doers(doers)
 
 
-def init_habery(name, base, bran, config_file, config_dir, salt, head_dir_path=None):
+def init_habery(name, base, bran, config_file, config_dir, salt, head_dir_path=None, version=None):
+    """Open new or persisted state with one explicit protocol/parser context."""
+    # Released 1.2.x has a fixed v1 parser; reject a requested v2 context there.
+    if kering.Version.major < 2 and version not in (None, kering.Vrsn_1_0):
+        raise ValueError("protocol version 2.0 requires a version-aware KERIpy runtime")
+    kwa = {"version": version or kering.Version} if kering.Version.major >= 2 else {}
     ks = keeping.Keeper(name=name, base=base, temp=False, reopen=True, headDirPath=head_dir_path)
     aeid = ks.gbls.get("aeid")
     if aeid is None:
@@ -91,9 +101,10 @@ def init_habery(name, base, bran, config_file, config_dir, salt, head_dir_path=N
             ks=ks,
             salt=salt if salt else None,
             headDirPath=head_dir_path,
+            **kwa,
         )
 
-    return habbing.Habery(name=name, base=base, bran=bran, ks=ks, headDirPath=head_dir_path)
+    return habbing.Habery(name=name, base=base, bran=bran, ks=ks, headDirPath=head_dir_path, **kwa)
 
 
 def load_policy(path):

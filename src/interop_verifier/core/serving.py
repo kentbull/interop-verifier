@@ -32,7 +32,8 @@ def incept_if_new(hby: Habery, alias: str, incept_args: dict):
     hab = hby.habByName(name=alias)
     if hab is not None:
         return hab
-    return hby.makeHab(name=alias, **inception_config(**incept_args))
+    kwa = {"version": hby.version} if hasattr(hby, "version") else {}
+    return hby.makeHab(name=alias, **kwa, **inception_config(**incept_args))
 
 
 def run_doers(doers, expire=0.0):
@@ -114,7 +115,8 @@ def setup(
     if clear_escrows:
         cdb.clearEscrows()
     tc = TeveryCuery(cdb=cdb, reger=reger, cues=tvy.cues)
-    parser = parsing.Parser(framed=True, kvy=kvy, tvy=tvy, rvy=rvy, vry=verifier, exc=exc, version=kering.Vrsn_1_0)
+    kwa = {"version": hby.version} if hasattr(hby, "version") else {}
+    parser = parsing.Parser(framed=True, kvy=kvy, tvy=tvy, rvy=rvy, vry=verifier, exc=exc, **kwa)
     comms = handling.Communicator(
         hby=hby,
         hab=hab,
@@ -185,9 +187,15 @@ class VerifierOOBIEnd(ending.OOBIEnd):
 
             url = f"http://127.0.0.1:{self.httpPort}"
             msgs = bytearray()
-            msgs.extend(self.hab.replay(aid))
-            msgs.extend(self.hab.makeLocScheme(eid=self.hab.pre, scheme="http", url=url))
-            msgs.extend(self.hab.makeEndRole(self.hab.pre, kering.Roles.controller, True))
+            # Replay attachments and signed replies share the ingress genus.
+            version = getattr(self.hby, "version", None)
+            replay_kwa = {"gvrsn": version} if version else {}
+            reply_kwa = {"version": version, "gvrsn": version} if version else {}
+            msgs.extend(self.hab.replay(aid, **replay_kwa))
+            msgs.extend(self.hab.makeLocScheme(eid=self.hab.pre, scheme="http", url=url,
+                                               **reply_kwa))
+            msgs.extend(self.hab.makeEndRole(self.hab.pre, kering.Roles.controller, True,
+                                             **reply_kwa))
 
             rep.status = falcon.HTTP_200
             rep.set_header(ending.OOBI_AID_HEADER, aid)
@@ -217,7 +225,6 @@ class CountingHttpEnd(indirecting.HttpEnd):
         self.lastPutSize = len(body)
         self.rxbs.extend(body)
 
-        rep.set_header('Content-Type', "application/json")
         rep.status = falcon.HTTP_204
 
 
