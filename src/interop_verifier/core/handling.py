@@ -9,7 +9,7 @@ from hio.base import doing, Doer
 from hio.core import http
 from hio.help import Hict
 from keri import kering
-from keri.core import coring
+from keri.core import coring, serdering
 from keri.end import ending
 from keri.help import helping
 from keri.peer import exchanging
@@ -44,9 +44,11 @@ class PresentationProofHandler(doing.Doer):
                 for label in ("anc", "iss", "acdc"):
                     if label not in embeds:
                         continue
-                    sadder = coring.Sadder(ked=embeds[label])
+                    # Rehydrate in its protocol domain so the embedded version is preserved.
+                    klas = serdering.SerderACDC if label == "acdc" else serdering.SerderKERI
+                    serder = klas(sad=embeds[label])
                     attachment = pathed[label] if label in pathed else bytearray()
-                    self.parser.parseOne(ims=bytearray(sadder.raw) + attachment)
+                    self.parser.parseOne(ims=bytearray(serder.raw) + attachment)
 
                 acdc = embeds["acdc"]
                 credential = acdc["d"]
@@ -89,7 +91,7 @@ class Communicator(doing.DoDoer):
 
             creder = self.reger.creds.get(keys=(said,))
             try:
-                state = self.reger.tevers[creder.regid].vcState(creder.said)
+                state = self.reger.tevers[creder.sad["ri"]].vcState(creder.said)
                 if state is None or state.et not in (kering.Ilks.iss, kering.Ilks.bis):
                     raise kering.ValidationError(f"credential {creder.said} is not currently issued")
                 self.policy.validate(creder)
@@ -109,7 +111,7 @@ class Communicator(doing.DoDoer):
             creder = self.reger.creds.get(keys=(said,))
             if creder is None:
                 continue
-            state = self.reger.tevers[creder.regid].vcState(creder.said)
+            state = self.reger.tevers[creder.sad["ri"]].vcState(creder.said)
             if state is None or state.et in (kering.Ilks.iss, kering.Ilks.bis):
                 continue
             if state.et in (kering.Ilks.rev, kering.Ilks.brv):
@@ -124,7 +126,7 @@ class Communicator(doing.DoDoer):
                     if action == "iss"
                     else revocation_payload(self.reger, creder, self.policy)
                 )
-                self.request(creder.said, creder.schema, action, creder.issuer, data)
+                self.request(creder.said, creder.schema, action, creder.sad["i"], data)
                 continue
 
             client, clientDoer = self.clients[said]

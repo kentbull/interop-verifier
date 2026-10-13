@@ -18,8 +18,8 @@ class VerificationPolicy:
     def validate(self, creder):
         if self.schemas and creder.schema not in self.schemas and not self.allow_unknown_schemas:
             raise kering.ValidationError(f"unsupported credential schema {creder.schema}")
-        if self.issuers and creder.issuer not in self.issuers:
-            raise kering.ValidationError(f"credential issuer {creder.issuer} is not allowed")
+        if self.issuers and creder.sad["i"] not in self.issuers:
+            raise kering.ValidationError(f"credential issuer {creder.sad['i']} is not allowed")
 
     def schema_name(self, schema):
         entry = self.schemas.get(schema)
@@ -36,7 +36,7 @@ def credential_payload(reger, creder, policy):
     data = {
         "type": policy.schema_name(creder.schema),
         "schema": creder.schema,
-        "issuer": creder.issuer,
+        "issuer": creder.sad["i"],
         "issueTimestamp": attrs.get("dt"),
         "credential": creder.said,
         "recipient": attrs.get("i"),
@@ -49,12 +49,12 @@ def credential_payload(reger, creder, policy):
 
 
 def revocation_payload(reger, creder, policy):
-    state = reger.tevers[creder.regi].vcState(creder.said)
+    state = reger.tevers[creder.sad["ri"]].vcState(creder.said)
     return {
         "type": policy.schema_name(creder.schema),
         "schema": creder.schema,
         "credential": creder.said,
-        "issuer": creder.issuer,
+        "issuer": creder.sad["i"],
         "revocationTimestamp": state.dt if state is not None else None,
     }
 
@@ -80,7 +80,7 @@ def chain_summary(reger, creder):
                 "edge": edge_label,
                 "credential": said,
                 "schema": source.schema if source is not None else edge.get("s"),
-                "issuer": source.issuer if source is not None else None,
+                "issuer": source.sad["i"] if source is not None else None,
                 "operator": edge.get("o"),
             })
             if source is not None:

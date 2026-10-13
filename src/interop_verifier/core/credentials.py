@@ -26,7 +26,7 @@ class TeveryCuery(doing.Doer):
                     said = serder.ked["i"]
                     creder = self.reger.creds.get(said)
                     if creder is not None:
-                        self.cdb.snd.pin(keys=(said,), val=coring.Prefixer(qb64=creder.issuer))
+                        self.cdb.snd.pin(keys=(said,), val=coring.Prefixer(qb64=creder.sad["i"]))
                         self.cdb.rev.pin(keys=(said,), val=coring.Dater())
                 yield self.tock
             yield self.tock
