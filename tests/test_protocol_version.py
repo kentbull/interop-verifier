@@ -42,6 +42,7 @@ def test_signed_oobi_after_reopen(tmp_path, version):
         app.add_route("/oobi/{aid}/controller", serving.VerifierOOBIEnd(hby, hab, 9723))
         response = testing.TestClient(app).simulate_get(f"/oobi/{aid}/controller")
         assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json+cesr"
         # Decompose independently before processing into a peer with no prior state.
         kwa = {"version": selected} if kering.Version.major >= 2 else {}
         if kwa:

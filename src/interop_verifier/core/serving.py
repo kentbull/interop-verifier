@@ -199,7 +199,8 @@ class VerifierOOBIEnd(ending.OOBIEnd):
 
             rep.status = falcon.HTTP_200
             rep.set_header(ending.OOBI_AID_HEADER, aid)
-            rep.content_type = "application/cesr"
+            # Released KERIpy 1.x resolves OOBIs only from this type; current KERIpy also accepts it.
+            rep.content_type = "application/json+cesr"
             rep.data = bytes(msgs)
             return
 
